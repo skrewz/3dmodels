@@ -1,0 +1,9 @@
+# Simple makefile for things relating to OpenSCAD, skeinforge etc.
+
+%.stl: %.scad
+	# http://en.wikibooks.org/wiki/OpenSCAD_User_Manual/Using_OpenSCAD_in_a_command_line_environment
+	openscad -o $@ $<
+
+%.gcode: %.stl
+	# This depends on not having the export module change the output filename:
+	skeinforge $<
