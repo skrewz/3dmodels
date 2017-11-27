@@ -8,6 +8,8 @@
 /* TODO
 
 Major TODO's:
+- Ensure m3 holes connect
+- Ensure pegs are tall enough
 - Redesign: mount_plate should have sunk gears (and be wider?) and easy-access
   screwholes (and easy-placement (!) screwholes).
 - Ensure *wall*mount cutouts look alike
@@ -126,6 +128,7 @@ mount_plate_thickness=7;
 gear_height=5;
 
 bearing_height=5; // actual
+bearing_cutout_height=7;
 bearing_outer_radius=8; // actual
 bearing_inner_radius=4; // actual
 bearing_cutout_inner_radius=0.95*bearing_inner_radius;
@@ -371,7 +374,7 @@ module mount_plate ()
         hull()
         {
           rotate([90,0,90])
-            cylinder(h=mount_plate_thickness,r=1.2*gear_curtain_radius);
+            cylinder(h=mount_plate_thickness,r=1.3*gear_curtain_radius);
 
           //cube([mount_plate_thickness,motormount_case_depth,motormount_case_height]);
           translate([0,-0.5*gear_curtain_radius,0])
@@ -389,11 +392,11 @@ module mount_plate ()
           hull()
         {
           rotate([90,0,90])
-            cylinder(h=gear_height,r=1.1*gear_curtain_radius);
+            cylinder(h=gear_height,r=1.2*gear_curtain_radius);
 
           translate(peg_positions[1])
             rotate([90,0,90])
-            cylinder(h=gear_height,r=1.1*gear_connecting_radius);
+            cylinder(h=gear_height,r=1.2*gear_connecting_radius);
 
           translate([
                 0,
@@ -546,7 +549,7 @@ module gear_connecting ()
         {
           gear_redirect(gear_connecting_radius);
         }
-        translate([0,0,-0.01]) cylinder(r=bearing_cutout_outer_radius,h=bearing_height+0.02);
+        translate([0,0,-0.01]) cylinder(r=bearing_cutout_outer_radius,h=bearing_cutout_height+0.02);
       }
     }
   }
@@ -556,7 +559,7 @@ module gear_curtain ()
 { // {{{
   grappling_length=30;
   // how much the diameter should be smaller at the base of the prongs:
-  grappling_shrinkage_percent=10;
+  grappling_shrinkage_percent=5;
   color("red")
   {
     difference() {
@@ -573,16 +576,18 @@ module gear_curtain ()
               r1=ikea_curtain_rod_inner_diameter/2,
               r2=(100-grappling_shrinkage_percent)/100*ikea_curtain_rod_inner_diameter/2,
               h=grappling_length);
-            translate([0,0,-10])
-              cylinder(r=ikea_curtain_rod_inner_diameter/2-2,h=2*grappling_length);
+            // TODO: big logs cutting out may be easier to print
             for (rot = [0,90])
-            translate([0,0,-gear_height-1])
+              translate([0,0,-gear_height-1])
               rotate([0,0,rot])
-              cube([ikea_curtain_rod_inner_diameter*2,ikea_curtain_rod_inner_diameter/4,60],center=true);
+              cube([ikea_curtain_rod_inner_diameter*2,ikea_curtain_rod_inner_diameter/2.5,60],center=true);
           }
         }
       }
-      translate([0,0,0.01*bearing_height]) cylinder(r=bearing_cutout_outer_radius,h=gear_height+bearing_height);
+      translate([0,0,0.01*bearing_cutout_height])
+        mirror([0,0,1]) // grow in appropriate direction with bearing_cutout_height
+        translate([0,0,-gear_height])
+        cylinder(r=bearing_cutout_outer_radius,h=bearing_cutout_height);
     }
   }
 } // }}}
@@ -789,11 +794,10 @@ if (render_part == "whole_thing" ) {
   // {{{
 
   // The motormount:
-  //motormount();
+  motormount();
 
   // The motor in its place:
   // {{{
-  /*
   translate([
     motormount_case_width-motor_total_length+motor_axle_protrusion,
     motormount_case_depth-motor_gearing_height/2,
@@ -805,7 +809,6 @@ if (render_part == "whole_thing" ) {
       motor();
   }
 
-  */
   // }}}
 
   // The mount plate
