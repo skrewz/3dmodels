@@ -103,7 +103,7 @@ module bevel_gear (
 	pitch_apex = sqrt (pow (cone_distance, 2) - pow (outside_pitch_radius, 2));
 	pitch_angle = asin (outside_pitch_radius/cone_distance);
 
-	echo ("Num Teeth:", number_of_teeth, " Pitch Angle:", pitch_angle);
+	//echo ("Num Teeth:", number_of_teeth, " Pitch Angle:", pitch_angle);
 
 	finish = (finish != -1) ? finish : (pitch_angle < 45) ? bevel_gear_flat : bevel_gear_back_cone;
 
@@ -254,30 +254,22 @@ module involute_bevel_gear_tooth (
 	{
 		for (i=[1:res])
 		{
-			assign (
-				point1=
-					involute (base_radius*2,start_angle+(stop_angle - start_angle)*(i-1)/res),
-				point2=
-					involute (base_radius*2,start_angle+(stop_angle - start_angle)*(i)/res))
-			{
-				assign (
-					side1_point1 = rotate_point (centre_angle, point1),
-					side1_point2 = rotate_point (centre_angle, point2),
-					side2_point1 = mirror_point (rotate_point (centre_angle, point1)),
-					side2_point2 = mirror_point (rotate_point (centre_angle, point2)))
-				{
-					polyhedron (
-						points=[
-							[back_cone_radius*2+0.1,0,cone_distance*2],
-							[side1_point1[0],side1_point1[1],0],
-							[side1_point2[0],side1_point2[1],0],
-							[side2_point2[0],side2_point2[1],0],
-							[side2_point1[0],side2_point1[1],0],
-							[0.1,0,0]],
-						triangles=[[0,1,2],[0,2,3],[0,3,4],[0,5,1],[1,5,2],[2,5,3],[3,5,4],[0,4,5]]);
-				}
-			}
-		}
+                  point1= involute (base_radius*2,start_angle+(stop_angle - start_angle)*(i-1)/res);
+                  point2= involute (base_radius*2,start_angle+(stop_angle - start_angle)*(i)/res);
+                  side1_point1 = rotate_point (centre_angle, point1);
+                  side1_point2 = rotate_point (centre_angle, point2);
+                  side2_point1 = mirror_point (rotate_point (centre_angle, point1));
+                  side2_point2 = mirror_point (rotate_point (centre_angle, point2));
+                  polyhedron (
+                      points=[
+                      [back_cone_radius*2+0.1,0,cone_distance*2],
+                      [side1_point1[0],side1_point1[1],0],
+                      [side1_point2[0],side1_point2[1],0],
+                      [side2_point2[0],side2_point2[1],0],
+                      [side2_point1[0],side2_point1[1],0],
+                      [0.1,0,0]],
+                      triangles=[[0,1,2],[0,2,3],[0,3,4],[0,5,1],[1,5,2],[2,5,3],[3,5,4],[0,4,5]]);
+                }
 	}
 }
 
@@ -306,7 +298,7 @@ module gear (
 	// Pitch diameter: Diameter of pitch circle.
 	pitch_diameter  =  number_of_teeth * circular_pitch / 180;
 	pitch_radius = pitch_diameter/2;
-	echo ("Teeth:", number_of_teeth, " Pitch radius:", pitch_radius);
+	//echo ("Teeth:", number_of_teeth, " Pitch radius:", pitch_radius);
 
 	// Base Circle
 	base_radius = pitch_radius*cos(pressure_angle);
@@ -431,23 +423,19 @@ module involute_gear_tooth (
 
 	union ()
 	{
-		for (i=[1:res])
-		assign (
-			point1=involute (base_radius,start_angle+(stop_angle - start_angle)*(i-1)/res),
-			point2=involute (base_radius,start_angle+(stop_angle - start_angle)*i/res))
-		{
-			assign (
-				side1_point1=rotate_point (centre_angle, point1),
-				side1_point2=rotate_point (centre_angle, point2),
-				side2_point1=mirror_point (rotate_point (centre_angle, point1)),
-				side2_point2=mirror_point (rotate_point (centre_angle, point2)))
-			{
-				polygon (
-					points=[[0,0],side1_point1,side1_point2,side2_point2,side2_point1],
-					paths=[[0,1,2,3,4,0]]);
-			}
-		}
-	}
+          for (i=[1:res])
+                {
+                  point1=involute (base_radius,start_angle+(stop_angle - start_angle)*(i-1)/res);
+                  point2=involute (base_radius,start_angle+(stop_angle - start_angle)*i/res);
+                  side1_point1=rotate_point (centre_angle, point1);
+                  side1_point2=rotate_point (centre_angle, point2);
+                  side2_point1=mirror_point (rotate_point (centre_angle, point1));
+                  side2_point2=mirror_point (rotate_point (centre_angle, point2));
+                  polygon (
+                      points=[[0,0],side1_point1,side1_point2,side2_point2,side2_point1],
+                      paths=[[0,1,2,3,4,0]]);
+                }
+        }
 }
 
 // Mathematical Functions

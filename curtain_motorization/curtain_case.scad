@@ -79,11 +79,6 @@ motormount_case_width=140;
 motormount_case_depth=30;
 motormount_case_height=40;
 
-// how far in from the edge should boltholes be placed?
-motormount_bolthole_indent_off_ceiling=motormount_case_height-0;
-motormount_bolthole_indent_off_wall=motormount_case_depth+2;
-// how far between boltholes?
-motormount_bolthole_interval=6;
 // how deep into the motormount do we make the nut holes?
 motormount_nuthole_inset=3;
 
@@ -135,6 +130,8 @@ screwhead_min_clearance_at_head=4;
 screwhead_min_clearance_for_insertion=20;
 // TODO: use this instead of magic numbers to ensure enough holding layers' worth are made
 screwhead_min_holding_depth=2;
+
+attachment_point_cutout_scaling=1.03;
 
 mount_plate_depth=60;
 mount_plate_height=60;
@@ -203,47 +200,6 @@ connecting_gear_pos = [
 ];
 // }}}
 
-
-// The position of motormount-to-mountplate boltholes:
-// {{{
-// the width of the non-cut-out piece of motormount, z- and y-wise.
-_bolthole_off_z = (motormount_case_height-ikea_curtain_roll_cutout_diameter/2)/2;
-_bolthole_off_y = (motormount_case_depth-ikea_curtain_roll_cutout_diameter/2)/2;
-
-// boltholes for M3 mounting to motormount
-mounting_boltholes_upper = [
-  /*
-  [
-    0,
-    motormount_case_depth-motormount_bolthole_indent_off_wall+0*motormount_bolthole_interval,
-    motormount_case_height-_bolthole_off_z
-  ],
-  */
-  [
-    0,
-    motormount_case_depth-motormount_bolthole_indent_off_wall+1*motormount_bolthole_interval,
-    motormount_case_height-_bolthole_off_z
-  ],
-];
-
-mounting_boltholes_lower = [
-  /*
-  [
-    0,
-    motormount_case_depth-_bolthole_off_y,
-    motormount_case_height-motormount_bolthole_indent_off_ceiling+0*motormount_bolthole_interval,
-  ],
-  */
-  [
-    0,
-    motormount_case_depth-_bolthole_off_y,
-    motormount_case_height-motormount_bolthole_indent_off_ceiling+1*motormount_bolthole_interval,
-  ],
-];
-
-// FIXME: there's got to be a better way to do array concatenation, but I'm on a plane so can't RTFM.
-mounting_boltholes = [ for (arr = [mounting_boltholes_upper, mounting_boltholes_lower ]) for (elm = arr) elm ];
-// }}}
 
 wallmount_screwdriver_hole_radius = 0.7*mount_plate_thickness/2;
 ceilmount_screwdriver_hole_radius = 0.7*mount_plate_thickness/2;
@@ -370,6 +326,35 @@ module mount_plate ()
 
   union()
   {
+    // motormount attachments
+    // {{{
+    // upper (ceiling-side) attachment point
+    translate([-mount_plate_thickness,5,motormount_case_height-5])
+    {
+      difference() {
+        cube([2*mount_plate_thickness,7,5]);
+        translate([mount_plate_thickness/2,-5,2.5])
+          rotate([270,0,0])
+            cylinder(r=m3_radius,h=15,$fs=1);
+      translate([mount_plate_thickness/2-m3_nut_width/2,3,0])
+        translate([
+            0,
+            3+attachment_point_cutout_scaling*mount_plate_thickness,
+            3+7.5])
+          rotate([90,0,0])
+          cube([m3_nut_width,2*m3_nut_width,m3_cap_clear_height]);
+      }
+    }
+    // lower (window-side) attachment point
+    translate([-mount_plate_thickness,motormount_case_depth-mount_plate_thickness,0])
+    {
+      difference() {
+        cube([2*mount_plate_thickness,7,5]);
+      translate([mount_plate_thickness/2,mount_plate_thickness/2,-2.5])
+        cylinder(r=m3_radius,h=15,$fs=1);
+      }
+    }
+    // }}}
     // Pegs (attached after gear countersink diff'ed off) :
     // {{{
     for (i = peg_positions)
@@ -424,18 +409,6 @@ module mount_plate ()
         }
         // }}}
 
-        // boltholes for mounting to motormount:
-        // {{{
-        for (s = mounting_boltholes)
-          translate(s)
-            translate([-mount_plate_thickness,0,0])
-            rotate([0,90,0])
-            {
-              cylinder(r=m3_radius,h=3*mount_plate_thickness,$fn=20);
-              translate([0,0,2*mount_plate_thickness-m3_cap_clear_height])
-                cylinder(r=m3_cap_radius,h=2*m3_cap_clear_height,$fn=20);
-            }
-        // }}}
 
         // clearance for motor axle:
         // {{{
@@ -451,35 +424,6 @@ module mount_plate ()
             }
         // }}}
 
-        // screwholes for mounting to wall/window frame:
-        if ("true" == wallmount_inclusion)
-        {
-          echo("wallmount_inclusion isn't well tested.");
-          // {{{
-          screwhole_positions = [
-            [
-              mount_plate_thickness/2,
-              0,
-              motormount_case_height-wallmount_hole_downwards_indent
-            ],
-            [
-              mount_plate_thickness/2,
-              0,
-              motormount_case_height-wallmount_hole_downwards_indent-1*wallmount_hole_interval
-            ],
-          ];
-          for (p = screwhole_positions)
-            translate(p)
-                {
-                  translate([0,motormount_case_depth-_bolthole_off_y,0])
-                    rotate([90,0,0])
-                    cylinder(r=wallmount_screwdriver_hole_radius,h=mount_plate_depth,$fn=20);
-                  translate([0,2*motormount_case_depth,0])
-                    rotate([90,0,0])
-                    cylinder(r=wallmount_hole_radius,h=mount_plate_depth,$fn=20);
-                }
-          // }}}
-        }
         // screwholes for mounting to ceiling/window frame:
         if ("true" == ceilmount_inclusion)
         {
@@ -647,6 +591,33 @@ module motormount()
     // {{{
     union ()
     {
+
+      // upper (ceiling-side) attachment point {{{
+      translate([motormount_case_width-mount_plate_thickness,5,motormount_case_height-5])
+      {
+        cube([2*mount_plate_thickness,attachment_point_cutout_scaling*7,1.05*5]);
+        translate([mount_plate_thickness/2,-5-/*arb:*/mount_plate_thickness/2,2.5])
+          rotate([270,0,0])
+          {
+            cylinder(r=m3_radius,h=20,$fs=0.7);
+            translate([0,0,m3_cap_clear_height])
+              cylinder(r=m3_cap_radius,h=2*m3_cap_clear_height,$fs=0.7);
+          }
+      } // }}}
+
+      // lower (window-side) attachment point {{{
+      translate([motormount_case_width-mount_plate_thickness,motormount_case_depth-mount_plate_thickness,0])
+        translate([0,0.01,-0.01])
+      {
+        cube([2*mount_plate_thickness,7,5]);
+        translate([mount_plate_thickness/2,mount_plate_thickness/2,-2.5])
+        {
+          cylinder(r=m3_radius,h=20,$fs=1);
+          translate([-m3_nut_width/2,-m3_nut_width/2,3+7.5])
+            cube([m3_nut_width,2*m3_nut_width,m3_cap_clear_height]);
+        }
+      } // }}}
+
       // a motor-sized gap (scaled up slightly) and cable throughway
       // {{{
       translate([
@@ -725,32 +696,6 @@ module motormount()
                   motormount_case_height-ikea_curtain_roll_cutout_diameter/2,
               ]);
         }
-      }
-      // }}}
-
-      // boltholes for mounting to motormount:
-      // {{{
-
-      // the through-going holes themselves:
-      translate ([motormount_case_width-motormount_nuthole_inset,0,0])
-      {
-        for (s = mounting_boltholes)
-          translate(s)
-            translate([-2*motormount_nuthole_inset,0,0])
-              rotate([0,90,0])
-                cylinder(r=m3_radius,h=4*motormount_nuthole_inset,$fn=20);
-
-        // upper cutouts:
-        for (s = mounting_boltholes_upper)
-          translate(s)
-            translate([-motormount_nuthole_inset,-m3_nut_width/2,-m3_nut_width/2])
-              cube([motormount_nuthole_inset,m3_nut_width,3*m3_nut_width]);
-
-        // lower cutouts:
-        for (s = mounting_boltholes_lower)
-          translate(s)
-            translate([-motormount_nuthole_inset,-m3_nut_width/2,-m3_nut_width/2])
-              cube([motormount_nuthole_inset,3*m3_nut_width,m3_nut_width]);
       }
       // }}}
 
@@ -841,17 +786,18 @@ module motormount()
             0,
             0
           ],
-          */
           [
             0.9*motormount_case_width,
             0,
             0
           ],
+          */
         ];
         for (p = screwhole_positions)
           translate(p)
               {
-                translate([0,2*motormount_case_depth/5,-_bolthole_off_z])
+#
+                translate([0,2*motormount_case_depth/5,0])
                   rotate([0,0,90])
                   cylinder(r=ceilmount_screwdriver_hole_radius,h=motormount_case_height,$fn=20);
                 translate([0,2*motormount_case_depth/5,motormount_case_height/2])
